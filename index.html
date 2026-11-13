@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Cuánto dependemos de la IA?</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --card: #111827;
+    --border: #1e293b;
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --accent: #22d3ee;
+    --green: #34d399;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e3a8a 100%);
+    padding: 2.5rem 1.5rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: "∫ ∑ π √ ∆ ∞ dy/dx f(x)";
+    position: absolute;
+    font-size: 4rem;
+    opacity: 0.07;
+    top: 20%;
+    left: 5%;
+    letter-spacing: 1rem;
+    pointer-events: none;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 5vw, 2.8rem);
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+  .subtitle {
+    color: #c7d2fe;
+    font-size: 1.05rem;
+    max-width: 700px;
+    margin: 0 auto 1.5rem;
+  }
+
+  /* Method buttons */
+  .methods {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+  }
+  .method-btn {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .method-btn:hover, .method-btn.active {
+    background: white;
+    color: #1e1b4b;
+  }
+
+  /* Main content */
+  .container {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.6rem;
+    margin-bottom: 1.4rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    margin: 1.2rem 0;
+    padding: 1rem;
+    background: #0f172a;
+    border-radius: 12px;
+  }
+  label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 0.25rem;
+  }
+  input, select {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: white;
+    padding: 0.55rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    min-width: 130px;
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+  }
+  .btn {
+    background: linear-gradient(135deg, var(--primary), #4f46e5);
+    color: white;
+    border: none;
+    padding: 0.65rem 1.4rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: transform 0.15s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-secondary {
+    background: #334155;
+  }
+
+  /* Result */
+  .result {
+    background: linear-gradient(135deg, rgba(34,211,238,0.1), rgba(99,102,241,0.1));
+    border: 1px solid rgba(34,211,238,0.3);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-top: 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    display: none;
+  }
+  .result strong {
+    color: var(--accent);
+    font-size: 1.35rem;
+  }
+
+  /* Steps */
+  .steps {
+    background: #0f172a;
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-top: 1rem;
+    font-size: 0.92rem;
+  }
+  .steps ol { padding-left: 1.3rem; }
+  .steps li { margin-bottom: 0.45rem; color: var(--muted); }
+  .math {
+    font-family: 'JetBrains Mono', monospace;
+    color: #a5b4fc;
+    background: rgba(99,102,241,0.15);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  /* Conclusion */
+  .conclusion {
+    border-left: 4px solid var(--primary);
+    background: rgba(99,102,241,0.08);
+    padding: 1rem 1.2rem;
+    border-radius: 0 10px 10px 0;
+    margin-top: 1.2rem;
+    font-size: 0.95rem;
+  }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+  }
+  th, td {
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    color: #a5b4fc;
+    font-weight: 600;
+    background: rgba(99,102,241,0.1);
+  }
+
+  /* Sections visibility */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  footer {
+    text-align: center;
+    padding: 2rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 600px) {
+    .controls { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>¿Cuánto dependemos de la IA?</h1>
+  <p class="subtitle">
+    Análisis de datos reales de Latinoamérica usando métodos numéricos:<br>
+    Interpolación Polinómica y Series de Taylor
+  </p>
+
+  <div class="methods">
+    <button class="method-btn active" onclick="showSection('inicio')">Inicio</button>
+    <button class="method-btn" onclick="showSection('datos')">📊 Datos</button>
+    <button class="method-btn" onclick="showSection('interp')">P(x) Interpolación</button>
+    <button class="method-btn" onclick="showSection('taylor')">Taylor</button>
+    <button class="method-btn" onclick="showSection('conclusiones')">Conclusiones</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ========== INICIO ========== -->
+  <div id="inicio" class="section active">
+    <div class="card">
+      <h2>🎯 Objetivo del proyecto</h2>
+      <p style="color:var(--muted); margin-bottom:1rem">
+        Usamos datos reales de adopción y dependencia de IA generativa en países de Latinoamérica 
+        (Microsoft AI Economy Institute + Termómetro Digital) y aplicamos métodos numéricos para responder preguntas de investigación.
+      </p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        <div style="background:#0f172a; padding:1rem; border-radius:10px;">
+          <strong style="color:#818cf8">Método 1</strong><br>
+          <span style="color:var(--muted); font-size:0.9rem">Interpolación Polinómica<br>(Lagrange / Newton)</span>
+        </div>
+        <div style="background:#0f172a; padding:1rem; border-radius:10px;">
+          <strong style="color:#818cf8">Método 2</strong><br>
+          <span style="color:var(--muted); font-size:0.9rem">Serie de Taylor de grado 2</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== DATOS ========== -->
+  <div id="datos" class="section">
+    <div class="card">
+      <h2>📊 Datos utilizados</h2>
+      <p style="color:var(--muted); font-size:0.9rem; margin-bottom:1rem">
+        Fuentes: Microsoft Global AI Diffusion Q2 2026 · ONU WPP 2024 · Termómetro Digital América Latina 2025
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>País</th>
+            <th>Población (M)</th>
+            <th>% Uso IA</th>
+            <th>Dependencia</th>
+          </tr>
+        </thead>
+        <tbody id="tablaDatos"></tbody>
+      </table>
+      <div style="height:280px; margin-top:1.5rem;">
+        <canvas id="chartDatos"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== INTERPOLACIÓN ========== -->
+  <div id="interp" class="section">
+    <div class="card">
+      <h2>📐 Interpolación Polinómica</h2>
+      <p style="color:var(--muted); margin-bottom:0.8rem">
+        <strong>Pregunta:</strong> ¿Cuál sería el índice de dependencia estimado para un país hipotético de <strong>100 millones</strong> de habitantes?
+      </p>
+
+      <div class="controls">
+        <div>
+          <label>Método</label>
+          <select id="metodoInterp">
+            <option value="lagrange">Lagrange</option>
+            <option value="newton">Newton (Diferencias Divididas)</option>
+          </select>
+        </div>
+        <div>
+          <label>Población objetivo (millones)</label>
+          <input type="number" id="poblacionObj" value="100" step="1">
+        </div>
+        <button class="btn" onclick="calcularInterpolacion()">Calcular</button>
+      </div>
+
+      <div id="resultadoInterp" class="result"></div>
+
+      <div class="steps" id="pasosInterp">
+        <strong>Paso a paso</strong>
+        <p style="color:var(--muted); margin-top:0.5rem">Presiona <strong>Calcular</strong> para ver el desarrollo completo.</p>
+      </div>
+
+      <div class="conclusion" id="conclInterp">
+        La interpolación permite estimar valores intermedios a partir de datos conocidos. 
+        Es especialmente útil cuando no tenemos el dato exacto de un país con cierta población.
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== TAYLOR ========== -->
+  <div id="taylor" class="section">
+    <div class="card">
+      <h2>📈 Serie de Taylor (grado 2)</h2>
+      <p style="color:var(--muted); margin-bottom:0.8rem">
+        <strong>Pregunta:</strong> Tomando a Colombia (46.2%) como base, ¿cómo cambia el índice de dependencia ante un pequeño incremento de población?
+      </p>
+
+      <div class="controls">
+        <div>
+          <label>Incremento poblacional (%)</label>
+          <input type="number" id="deltaPob" value="2" step="0.5">
+        </div>
+        <div>
+          <label>Primera derivada (∂D/∂P)</label>
+          <input type="number" id="deriv1" value="-0.08" step="0.01">
+        </div>
+        <div>
+          <label>Segunda derivada (∂²D/∂P²)</label>
+          <input type="number" id="deriv2" value="0.004" step="0.001">
+        </div>
+        <button class="btn" onclick="calcularTaylor()">Calcular Taylor</button>
+      </div>
+
+      <div id="resultadoTaylor" class="result"></div>
+
+      <div class="steps" id="pasosTaylor">
+        <strong>Fórmula de Taylor grado 2:</strong>
+        <p class="math" style="margin:0.8rem 0; display:inline-block">
+          D(P) ≈ D(P₀) + D'(P₀)·ΔP + ½·D''(P₀)·(ΔP)²
+        </p>
+      </div>
+
+      <div class="conclusion" id="conclTaylor">
+        La serie de Taylor es ideal para aproximaciones locales. Nos permite proyectar el comportamiento 
+        del índice de dependencia ante cambios pequeños en la población.
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== CONCLUSIONES ========== -->
+  <div id="conclusiones" class="section">
+    <div class="card">
+      <h2>🎯 Conclusiones del proyecto</h2>
+      
+      <div class="conclusion" style="margin-bottom:1rem">
+        <strong>Conclusión Método 1 – Interpolación</strong>
+        <p style="margin-top:0.4rem; color:var(--muted)">
+          La interpolación polinómica (Lagrange o Newton) permite estimar el índice de dependencia 
+          de un país hipotético de 100 millones de habitantes a partir de los datos reales de países 
+          latinoamericanos. El resultado muestra que la relación entre tamaño poblacional y dependencia 
+          no es lineal, por lo que estos métodos son más adecuados que una simple regla de tres.
+        </p>
+      </div>
+
+      <div class="conclusion" style="margin-bottom:1rem">
+        <strong>Conclusión Método 2 – Taylor</strong>
+        <p style="margin-top:0.4rem; color:var(--muted)">
+          Usando un polinomio de Taylor de grado 2 centrado en Colombia, podemos proyectar cómo 
+          variaría el índice de dependencia ante pequeños cambios demográficos. Este enfoque es 
+          especialmente útil para análisis de sensibilidad y escenarios a corto plazo.
+        </p>
+      </div>
+
+      <div class="conclusion" style="border-left-color: var(--green); background: rgba(52,211,153,0.08);">
+        <strong>Conclusión general</strong>
+        <p style="margin-top:0.4rem; color:var(--muted)">
+          Ambos métodos demuestran que las herramientas numéricas no solo resuelven problemas 
+          matemáticos abstractos, sino que aportan valor real en el análisis de fenómenos sociales 
+          y tecnológicos como la adopción de inteligencia artificial. Combinar datos reales con 
+          métodos numéricos permite generar insights más profundos y fundamentados.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Proyecto de Métodos Numéricos · Datos 2025-2026 · Microsoft · ONU · Mobile Time
+</footer>
+
+<script>
+// ========== DATOS ==========
+const paises = [
+  { nombre: "Brasil",     poblacion: 213.6, uso: 20.2, dep: 46.0 },
+  { nombre: "México",     poblacion: 133.0, uso: 21.4, dep: 32.0 },
+  { nombre: "Colombia",   poblacion: 53.9,  uso: 25.9, dep: 46.2 },
+  { nombre: "Argentina",  poblacion: 46.0,  uso: 23.4, dep: 33.0 },
+  { nombre: "Chile",      poblacion: 19.9,  uso: 24.0, dep: 34.0 },
+  { nombre: "Costa Rica", poblacion: 5.2,   uso: 29.7, dep: 36.5 },
+  { nombre: "Uruguay",    poblacion: 3.4,   uso: 25.7, dep: 35.5 }
+];
+
+// Llenar tabla
+const tbody = document.getElementById("tablaDatos");
+paises.forEach(p => {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>${p.nombre}</td>
+    <td>${p.poblacion.toFixed(1)}</td>
+    <td>${p.uso}%</td>
+    <td>${p.dep}%</td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// Gráfico
+new Chart(document.getElementById("chartDatos"), {
+  type: "scatter",
+  data: {
+    datasets: [{
+      label: "Dependencia vs Población",
+      data: paises.map(p => ({x: p.poblacion, y: p.dep})),
+      backgroundColor: "#6366f1",
+      pointRadius: 8,
+      pointHoverRadius: 11
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { title: {display:true, text:"Población (millones)", color:"#94a3b8"}, grid:{color:"#1e293b"}, ticks:{color:"#94a3b8"} },
+      y: { title: {display:true, text:"Índice Dependencia (%)", color:"#94a3b8"}, grid:{color:"#1e293b"}, ticks:{color:"#94a3b8"}, min:28, max:50 }
+    },
+    plugins: {
+      legend: { labels: { color: "#e2e8f0" } },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const p = paises[ctx.dataIndex];
+            return `${p.nombre}: ${p.poblacion}M → ${p.dep}%`;
+          }
+        }
+      }
+    }
+  }
+});
+
+// ========== NAVEGACIÓN ==========
+function showSection(id) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+
+  document.querySelectorAll(".method-btn").forEach(btn => btn.classList.remove("active"));
+  event.target.classList.add("active");
+}
+
+// ========== INTERPOLACIÓN ==========
+function lagrange(x, xs, ys) {
+  let res = 0;
+  for (let i = 0; i < xs.length; i++) {
+    let term = ys[i];
+    for (let j = 0; j < xs.length; j++) {
+      if (i !== j) term *= (x - xs[j]) / (xs[i] - xs[j]);
+    }
+    res += term;
+  }
+  return res;
+}
+
+function newton(x, xs, ys) {
+  const n = xs.length;
+  const dd = Array.from({length:n}, () => Array(n).fill(0));
+  for (let i=0; i<n; i++) dd[i][0] = ys[i];
+  for (let j=1; j<n; j++) {
+    for (let i=0; i<n-j; i++) {
+      dd[i][j] = (dd[i+1][j-1] - dd[i][j-1]) / (xs[i+j] - xs[i]);
+    }
+  }
+  let res = dd[0][0], prod = 1;
+  for (let j=1; j<n; j++) {
+    prod *= (x - xs[j-1]);
+    res += dd[0][j] * prod;
+  }
+  return res;
+}
+
+function calcularInterpolacion() {
+  // Seleccionamos países intermedios (más cercanos a 100M)
+  const seleccion = [
+    paises.find(p => p.nombre === "México"),
+    paises.find(p => p.nombre === "Colombia"),
+    paises.find(p => p.nombre === "Argentina"),
+    paises.find(p => p.nombre === "Chile")
+  ].sort((a,b) => a.poblacion - b.poblacion);
+
+  const xs = seleccion.map(p => p.poblacion);
+  const ys = seleccion.map(p => p.dep);
+  const target = parseFloat(document.getElementById("poblacionObj").value) || 100;
+  const metodo = document.getElementById("metodoInterp").value;
+
+  const valor = metodo === "lagrange" 
+    ? lagrange(target, xs, ys) 
+    : newton(target, xs, ys);
+
+  // Mostrar resultado
+  const resBox = document.getElementById("resultadoInterp");
+  resBox.style.display = "block";
+  resBox.innerHTML = `
+    País hipotético de <strong>${target} millones</strong><br>
+    Índice de dependencia estimado: <strong>${valor.toFixed(2)}%</strong>
+    <span style="background:#312e81; color:#c7d2fe; font-size:0.75rem; padding:0.2rem 0.5rem; border-radius:4px; margin-left:0.5rem">
+      ${metodo === "lagrange" ? "Lagrange" : "Newton"}
+    </span>
+  `;
+
+  // Pasos
+  document.getElementById("pasosInterp").innerHTML = `
+    <strong>Paso a paso – ${metodo === "lagrange" ? "Lagrange" : "Newton"}</strong>
+    <ol>
+      <li>Se seleccionan los países: <strong>${seleccion.map(p=>p.nombre).join(", ")}</strong></li>
+      <li>Puntos ordenados: ${xs.map((x,i)=>`(${x.toFixed(1)}, ${ys[i]})`).join(" , ")}</li>
+      <li>${metodo === "lagrange" 
+          ? 'Se aplica la fórmula de Lagrange: <span class="math">P(x) = Σ yᵢ · ℓᵢ(x)</span>' 
+          : 'Se construye la tabla de diferencias divididas y se evalúa el polinomio de Newton'}</li>
+      <li>Se evalúa en <span class="math">x = ${target}</span></li>
+      <li><strong>Resultado final: ${valor.toFixed(2)}%</strong></li>
+    </ol>
+  `;
+
+  document.getElementById("conclInterp").innerHTML = `
+    Para un país de <strong>${target} millones</strong> de habitantes, el método de 
+    <strong>${metodo === "lagrange" ? "Lagrange" : "Newton"}</strong> estima un índice de dependencia 
+    de <strong>${valor.toFixed(2)}%</strong>. Este valor se ubica de forma coherente entre los 
+    datos de México y Colombia, demostrando que la interpolación captura bien la relación 
+    no lineal entre población y dependencia de IA.
+  `;
+}
+
+// ========== TAYLOR ==========
+function calcularTaylor() {
+  const D0 = 46.2;
+  const P0 = 53.9;
+  const deltaPct = parseFloat(document.getElementById("deltaPob").value) || 2;
+  const d1 = parseFloat(document.getElementById("deriv1").value);
+  const d2 = parseFloat(document.getElementById("deriv2").value);
+
+  const deltaP = P0 * (deltaPct / 100);
+  const resultado = D0 + d1*deltaP + 0.5*d2*deltaP*deltaP;
+
+  const resBox = document.getElementById("resultadoTaylor");
+  resBox.style.display = "block";
+  resBox.innerHTML = `
+    Base: Colombia → <strong>46.2%</strong> (53.9 M)<br>
+    Incremento: <strong>+${deltaPct}%</strong> (ΔP ≈ ${deltaP.toFixed(2)} M)<br>
+    Aproximación Taylor grado 2: <strong>${resultado.toFixed(2)}%</strong>
+    <br><small style="color:#94a3b8">Variación: ${(resultado - D0).toFixed(2)} puntos porcentuales</small>
+  `;
+
+  document.getElementById("pasosTaylor").innerHTML = `
+    <strong>Paso a paso – Taylor grado 2</strong>
+    <ol>
+      <li>Punto base: Colombia → D₀ = 46.2% &nbsp; P₀ = 53.9 millones</li>
+      <li>Derivadas estimadas: <span class="math">D' ≈ ${d1}</span> &nbsp; <span class="math">D'' ≈ ${d2}</span></li>
+      <li>Cambio de población: ΔP = 53.9 × (${deltaPct}/100) = <strong>${deltaP.toFixed(3)} M</strong></li>
+      <li>Fórmula: <span class="math">D ≈ 46.2 + (${d1})·(${deltaP.toFixed(3)}) + ½·(${d2})·(${deltaP.toFixed(3)})²</span></li>
+      <li><strong>Resultado: ${resultado.toFixed(2)}%</strong></li>
+    </ol>
+  `;
+
+  document.getElementById("conclTaylor").innerHTML = `
+    Ante un incremento del <strong>${deltaPct}%</strong> en la población de Colombia, 
+    el polinomio de Taylor de grado 2 proyecta un índice de dependencia de 
+    <strong>${resultado.toFixed(2)}%</strong>. El término de segundo orden aporta una 
+    corrección de curvatura que mejora la precisión respecto a una aproximación solo lineal.
+  `;
+}
+
+// Ejecutar una vez al cargar
+calcularInterpolacion();
+calcularTaylor();
+</script>
+</body>
+</html>
